@@ -6,10 +6,10 @@ Real-time performance monitoring and business intelligence for the search agent.
 Tracks performance metrics, success rates, content quality, and business KPIs.
 """
 
+import json
 import time
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
-import json
 
 
 class BusinessMetrics:

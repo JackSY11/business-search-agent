@@ -7,8 +7,8 @@ Supports development, staging, and production configurations.
 """
 
 import os
-from typing import Dict, List
 from dataclasses import dataclass
+from typing import Dict, List
 
 
 @dataclass

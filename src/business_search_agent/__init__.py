@@ -18,7 +18,7 @@ License: MIT
 Version: 1.0.0
 """
 
-from .agent import EnhancedBusinessSearchAgent, BusinessSearchResult
+from .agent import BusinessSearchResult, EnhancedBusinessSearchAgent
 from .config import BusinessConfig
 from .metrics import BusinessMetrics
 from .utils import business_search_async, business_search_sync

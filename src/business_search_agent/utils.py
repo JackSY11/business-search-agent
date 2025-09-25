@@ -8,6 +8,7 @@ Provides simple interfaces for common operations.
 
 import asyncio
 from typing import Dict, List, Optional
+
 from .agent import EnhancedBusinessSearchAgent
 from .config import BusinessConfig
 

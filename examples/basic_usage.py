@@ -6,15 +6,12 @@ This file demonstrates the most common usage patterns for the business search ag
 """
 
 import asyncio
-from business_search_agent import (
-    quick_search,
-    business_search_sync,
-    business_search_async,
-    EnhancedBusinessSearchAgent,
-    create_production_config,
-    get_search_summary,
-    extract_chinese_results,
-)
+
+from business_search_agent import (EnhancedBusinessSearchAgent,
+                                   business_search_async, business_search_sync,
+                                   create_production_config,
+                                   extract_chinese_results, get_search_summary,
+                                   quick_search)
 
 
 def example_quick_search():

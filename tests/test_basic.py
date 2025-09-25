@@ -5,19 +5,17 @@ Basic Test Suite for Business Search Agent
 Tests core functionality, configuration, and utilities.
 """
 
-import pytest
 import asyncio
 from unittest.mock import Mock, patch
-from business_search_agent import (
-    BusinessConfig,
-    BusinessMetrics,
-    EnhancedBusinessSearchAgent,
-    BusinessSearchResult,
-    business_search_sync,
-    validate_search_results,
-    extract_chinese_results,
-    get_search_summary,
-)
+
+import pytest
+
+from business_search_agent import (BusinessConfig, BusinessMetrics,
+                                   BusinessSearchResult,
+                                   EnhancedBusinessSearchAgent,
+                                   business_search_sync,
+                                   extract_chinese_results, get_search_summary,
+                                   validate_search_results)
 
 
 class TestBusinessConfig:
