@@ -29,25 +29,26 @@ __license__ = "MIT"
 
 __all__ = [
     "EnhancedBusinessSearchAgent",
-    "BusinessSearchResult", 
+    "BusinessSearchResult",
     "BusinessConfig",
     "BusinessMetrics",
     "business_search_async",
-    "business_search_sync"
+    "business_search_sync",
 ]
+
 
 # Quick start convenience function
 def quick_search(query: str, max_results: int = 20) -> dict:
     """
     Quick search function for immediate use.
-    
+
     Args:
         query: Search query (Chinese or English)
         max_results: Maximum number of results to return
-        
+
     Returns:
         dict: Search results with business intelligence
-        
+
     Example:
         >>> from business_search_agent import quick_search
         >>> results = quick_search("上海咖啡店推荐")
