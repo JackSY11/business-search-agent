@@ -17,6 +17,7 @@ import hashlib
 import json
 import logging
 import os
+import random
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -60,9 +61,14 @@ class BusinessSearchResult:
         text = f"{self.title} {self.description}"
         if not text.strip():
             return 0.0
-        chinese_chars = len(re.findall(r"[\u4e00-\u9fff]", text))
+        
+        # Enhanced Chinese character detection including traditional characters
+        chinese_chars = len(re.findall(r"[\u4e00-\u9fff\u3400-\u4dbf\u20000-\u2a6df\u2a700-\u2b73f\u2b740-\u2b81f\u2b820-\u2ceaf]", text))
+        # Also include Chinese punctuation
+        chinese_punct = len(re.findall(r"[\u3000-\u303f\uff00-\uffef]", text))
+        
         total_chars = len(re.sub(r"\s+", "", text))
-        return chinese_chars / max(total_chars, 1)
+        return (chinese_chars + chinese_punct * 0.5) / max(total_chars, 1)
 
     def _calculate_content_quality(self) -> float:
         """Calculate content quality score for business use"""
@@ -87,18 +93,52 @@ class BusinessSearchResult:
         return min(score, 100.0)
 
     def _calculate_business_value(self) -> float:
-        """Calculate business value score"""
-        score = 40.0  # Base score
+        """Calculate business value score optimized for Chinese market"""
+        score = 35.0  # Base score
 
-        # Zhihu premium content
-        if self.is_zhihu:
-            score += 30
+        # Premium Chinese platforms (weighted by value)
+        url_lower = self.url.lower()
+        if "zhihu.com" in url_lower:
+            score += 35  # Zhihu - premium Q&A platform
+        elif "weibo.com" in url_lower:
+            score += 30  # Weibo - social media insights
+        elif "douban.com" in url_lower:
+            score += 25  # Douban - reviews and discussions
+        elif "baidu.com" in url_lower:
+            score += 20  # Baidu - search and knowledge
+        elif "163.com" in url_lower or "sina.com" in url_lower:
+            score += 22  # Major news portals
+        elif "qq.com" in url_lower or "tencent.com" in url_lower:
+            score += 18  # Tencent ecosystem
+        elif "taobao.com" in url_lower or "tmall.com" in url_lower:
+            score += 28  # E-commerce platforms
+        elif "xiaohongshu.com" in url_lower:
+            score += 26  # Little Red Book - lifestyle
+        elif "bilibili.com" in url_lower:
+            score += 24  # B站 - video content
+        elif ".cn" in url_lower:
+            score += 15  # Chinese domains
+        elif ".com.cn" in url_lower or ".net.cn" in url_lower:
+            score += 12  # Chinese commercial domains
 
-        # High Chinese ratio = better for China market
-        score += self.chinese_ratio * 20
+        # Chinese content ratio bonus (more aggressive for Chinese market)
+        score += self.chinese_ratio * 25
+        
+        # High Chinese ratio gets extra boost
+        if self.chinese_ratio > 0.8:
+            score += 10
+        elif self.chinese_ratio > 0.6:
+            score += 5
 
         # Quality content bonus
-        score += self.content_quality_score * 0.1
+        score += self.content_quality_score * 0.12
+        
+        # Length bonus for substantial content
+        content_length = len(self.title) + len(self.description)
+        if content_length > 200:
+            score += 5
+        elif content_length > 400:
+            score += 8
 
         return min(score, 100.0)
 
@@ -128,43 +168,77 @@ class EnhancedBusinessSearchAgent:
             ),
         )
 
-        # Engine configurations optimized for business use
+        # Engine configurations optimized for Chinese internet
         self.engines = {
             "startpage": {
                 "name": "Startpage",
                 "priority": 100,
-                "url_template": "https://startpage.com/sp/search?query={query}",
+                "url_template": "https://startpage.com/sp/search?query={query}&language=zhcn",
                 "selectors": {
-                    "containers": ["div.result"],
-                    "title": ["h3", "h2"],
-                    "url": ["a[href]"],
-                    "description": [".description", "p", "span"],
+                    "containers": ["div.result", "div.w-gl__result", ".w-gl"],
+                    "title": ["h3", "h2", ".w-gl__result-title", "a.result-link"],
+                    "url": ["a[href]", ".w-gl__result-url", "a.result-link"],
+                    "description": [".description", "p", "span", ".w-gl__description"],
                 },
-                "business_value": 95,  # High value for Zhihu content
+                "business_value": 95,  # High value for Chinese content
+                "encoding": "utf-8",
+                "headers": {"Accept-Language": "zh-CN,zh;q=0.9,en;q=0.7"},
             },
             "bing": {
                 "name": "Bing",
-                "priority": 90,
-                "url_template": "https://bing.com/search?q={query}",
+                "priority": 95,
+                "url_template": "https://www.bing.com/search?q={query}&setlang=zh-cn&cc=cn",
                 "selectors": {
-                    "containers": ["li.b_algo"],
-                    "title": ["h2", ".b_title"],
-                    "url": ["h2 a", "a[href]"],
-                    "description": [".b_caption p", ".b_snippet", "p"],
+                    "containers": ["li.b_algo", ".b_algo", "ol#b_results > li"],
+                    "title": ["h2", ".b_title", "h3", "h2 a"],
+                    "url": ["h2 a", "a[href]", ".b_title a"],
+                    "description": [".b_caption p", ".b_snippet", "p", ".b_caption"],
                 },
-                "business_value": 85,  # Good Chinese results
+                "business_value": 92,  # Excellent for Chinese results
+                "encoding": "utf-8",
+                "headers": {"Accept-Language": "zh-CN,zh;q=0.9"},
+            },
+            "duckduckgo": {
+                "name": "DuckDuckGo",
+                "priority": 88,
+                "url_template": "https://duckduckgo.com/html/?q={query}&kl=cn-zh",
+                "selectors": {
+                    "containers": [".result", "div.results_links", ".web-result"],
+                    "title": [".result__title", "h2", "a.result__a"],
+                    "url": [".result__url", "a.result__a", "a[href]"],
+                    "description": [".result__snippet", ".result__body", "p"],
+                },
+                "business_value": 88,  # Good privacy-focused results
+                "encoding": "utf-8",
+                "headers": {"Accept-Language": "zh-CN,zh;q=0.9"},
             },
             "yandex": {
                 "name": "Yandex",
-                "priority": 80,
-                "url_template": "https://yandex.com/search/?text={query}",
+                "priority": 85,
+                "url_template": "https://yandex.com/search/?text={query}&lr=134",  # lr=134 for China
                 "selectors": {
-                    "containers": ["div.serp-item"],
-                    "title": ["h2", "h3"],
-                    "url": ["a[href]"],
-                    "description": [".text-container", ".snippet", "div"],
+                    "containers": ["div.serp-item", ".serp-item", "li.serp-item"],
+                    "title": ["h2", "h3", ".serp-item__title", ".organic__title"],
+                    "url": ["a[href]", ".serp-item__title a", ".organic__url"],
+                    "description": [".text-container", ".snippet", "div", ".serp-item__text", ".organic__text"],
                 },
-                "business_value": 70,  # International content
+                "business_value": 80,  # Good for multilingual content
+                "encoding": "utf-8",
+                "headers": {"Accept-Language": "zh-CN,zh;q=0.9,ru;q=0.8"},
+            },
+            "searx": {
+                "name": "SearXNG",
+                "priority": 75,
+                "url_template": "https://search.brave4u.com/search?q={query}&language=zh-CN",
+                "selectors": {
+                    "containers": ["div.result", ".result", "article"],
+                    "title": ["h3", "h2", "a.url_wrapper", ".title"],
+                    "url": ["a[href]", ".url_wrapper"],
+                    "description": [".content", "p", ".description"],
+                },
+                "business_value": 75,  # Alternative search source
+                "encoding": "utf-8",
+                "headers": {"Accept-Language": "zh-CN,zh;q=0.9"},
             },
         }
 
@@ -269,22 +343,74 @@ class EnhancedBusinessSearchAgent:
                 # Build search URL
                 search_url = engine["url_template"].format(query=quote(query))
 
-                # Smart headers
-                headers = {
+                # Enhanced headers for Chinese websites
+                base_headers = {
                     "User-Agent": self.ua.random,
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+                    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "DNT": "1",
+                    "Connection": "keep-alive",
+                    "Upgrade-Insecure-Requests": "1",
+                    "Cache-Control": "max-age=0",
                 }
+                
+                # Engine-specific headers
+                engine_headers = engine.get("headers", {})
+                headers = {**base_headers, **engine_headers}
 
-                # Make async request
-                async with self.session.get(search_url, headers=headers) as response:
-                    if response.status != 200:
-                        return {"results": [], "engine_name": engine["name"]}
+                # Make async request with retry logic
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        # Add random delay to avoid rate limiting
+                        if attempt > 0:
+                            await asyncio.sleep(2 ** attempt + random.uniform(0.5, 1.5))
+                        
+                        async with self.session.get(search_url, headers=headers, ssl=False) as response:
+                            if response.status == 429:  # Rate limited
+                                if attempt < max_retries - 1:
+                                    await asyncio.sleep(5)
+                                    continue
+                                return {"results": [], "engine_name": engine["name"], "error": "rate_limited"}
+                            
+                            if response.status not in [200, 201, 202]:
+                                if attempt < max_retries - 1:
+                                    continue
+                                return {"results": [], "engine_name": engine["name"], "error": f"http_{response.status}"}
 
-                    html_content = await response.text()
-
-                    if len(html_content) < 1000:  # Too small, likely blocked
-                        return {"results": [], "engine_name": engine["name"]}
+                            # Try to get content with proper encoding handling
+                            try:
+                                html_content = await response.text(encoding='utf-8')
+                            except UnicodeDecodeError:
+                                # Fallback for problematic encodings
+                                raw_content = await response.read()
+                                html_content = raw_content.decode('utf-8', errors='ignore')
+                            
+                            # Check for blocked or insufficient content
+                            if len(html_content) < 500:  # Too small, likely blocked
+                                if attempt < max_retries - 1:
+                                    continue
+                                return {"results": [], "engine_name": engine["name"], "error": "insufficient_content"}
+                            
+                            # Check for common blocking indicators
+                            blocking_indicators = [
+                                "访问被拒绝", "access denied", "blocked", "captcha",
+                                "please verify", "robot", "bot detection", "cloudflare"
+                            ]
+                            
+                            content_lower = html_content.lower()
+                            if any(indicator in content_lower for indicator in blocking_indicators):
+                                if attempt < max_retries - 1:
+                                    continue
+                                return {"results": [], "engine_name": engine["name"], "error": "blocked"}
+                            
+                            break  # Success, exit retry loop
+                            
+                    except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                        if attempt < max_retries - 1:
+                            continue
+                        return {"results": [], "engine_name": engine["name"], "error": str(e)}
 
                 # Parse results
                 soup = BeautifulSoup(html_content, "html.parser")

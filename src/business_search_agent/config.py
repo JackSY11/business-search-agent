@@ -149,27 +149,39 @@ class BusinessConfig:
                 "zhihu_boost": "false",
             },
             "production": {
-                "timeout": 12,
-                "max_concurrent": 6,
-                "rate_limit": 1.0,
+                "timeout": 15,
+                "max_concurrent": 8,
+                "rate_limit": 1.2,
                 "cache_ttl": 3600,  # 1 hour
                 "parallel_enabled": "true",
-                "max_results": 25,
-                "priority_engines": "startpage,bing,yandex",
-                "quality_threshold": 70.0,
-                "chinese_threshold": 0.3,
+                "max_results": 30,
+                "priority_engines": "bing,startpage,duckduckgo,yandex,searx",
+                "quality_threshold": 65.0,  # Slightly lower for more Chinese content
+                "chinese_threshold": 0.25,  # More inclusive for mixed content
                 "zhihu_boost": "true",
             },
             "high_performance": {
-                "timeout": 15,
-                "max_concurrent": 10,
-                "rate_limit": 0.5,
+                "timeout": 20,
+                "max_concurrent": 12,
+                "rate_limit": 0.8,  # Balanced for stability
                 "cache_ttl": 7200,  # 2 hours
                 "parallel_enabled": "true",
                 "max_results": 50,
-                "priority_engines": "startpage,bing,yandex",
+                "priority_engines": "bing,startpage,duckduckgo,yandex,searx",
+                "quality_threshold": 55.0,  # Lower for maximum Chinese content
+                "chinese_threshold": 0.2,  # Very inclusive
+                "zhihu_boost": "true",
+            },
+            "chinese_optimized": {
+                "timeout": 18,
+                "max_concurrent": 10,
+                "rate_limit": 1.5,
+                "cache_ttl": 5400,  # 1.5 hours
+                "parallel_enabled": "true",
+                "max_results": 40,
+                "priority_engines": "bing,duckduckgo,startpage,yandex,searx",
                 "quality_threshold": 60.0,
-                "chinese_threshold": 0.3,
+                "chinese_threshold": 0.15,  # Very low threshold for mixed content
                 "zhihu_boost": "true",
             },
         }

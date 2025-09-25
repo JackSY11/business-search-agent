@@ -105,6 +105,21 @@ def create_high_performance_config() -> BusinessConfig:
     return BusinessConfig(profile="high_performance")
 
 
+def create_chinese_optimized_config() -> BusinessConfig:
+    """
+    Create a configuration optimized for Chinese internet content extraction.
+
+    Returns:
+        BusinessConfig: Optimized for Chinese websites and content
+
+    Example:
+        >>> from business_search_agent import create_chinese_optimized_config
+        >>> config = create_chinese_optimized_config()
+        >>> results = business_search_sync("北京美食推荐", config=config)
+    """
+    return BusinessConfig(profile="chinese_optimized")
+
+
 def validate_search_results(results: Dict) -> bool:
     """
     Validate search results structure.
