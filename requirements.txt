@@ -1,0 +1,35 @@
+# Business Search Agent - Production Dependencies
+# High-performance, enterprise-grade search agent for Chinese content extraction
+
+# Core async HTTP client
+aiohttp>=3.12.0,<4.0.0
+
+# HTML parsing
+beautifulsoup4>=4.12.0,<5.0.0
+
+# User agent rotation
+fake-useragent>=2.2.0,<3.0.0
+
+# Caching system
+cachetools>=6.2.0,<7.0.0
+
+# Retry mechanisms
+tenacity>=9.1.0,<10.0.0
+
+# Data structures
+typing-extensions>=4.2.0
+
+# Development dependencies (optional)
+pytest>=8.0.0,<9.0.0
+pytest-asyncio>=0.24.0,<1.0.0
+pytest-cov>=6.0.0,<7.0.0
+black>=24.0.0,<25.0.0
+flake8>=7.0.0,<8.0.0
+mypy>=1.8.0,<2.0.0
+
+# Documentation
+sphinx>=8.0.0,<9.0.0
+sphinx-rtd-theme>=3.0.0,<4.0.0
+
+# Performance monitoring (optional)
+psutil>=6.0.0,<7.0.0
